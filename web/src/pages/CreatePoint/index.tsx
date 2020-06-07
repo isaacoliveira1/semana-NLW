@@ -4,12 +4,17 @@ import axios from 'axios'
 import { FiArrowLeft } from 'react-icons/fi'
 import { Map, TileLayer, Marker } from 'react-leaflet';
 import { LeafletMouseEvent } from 'leaflet';
-import api from '../../../services/api';
+import api from '../../services/api';
 import ModalSucess from '../Sucess'
+
+import DropZone from '../../components/Dropzone/index'
+
 
 import './styles.css'
 
-import logo from '../../../assets/logo.svg'
+import logo from '../../assets/logo.svg'
+
+
 
 interface Item {
     id: number,
@@ -42,12 +47,13 @@ const CreatePoint = () => {
     const [selectedUf, setSelectedUf] = useState('0');
     const [selectedCity, setCitySelected] = useState('0');
     const [selectedItems, setSelectedItems] = useState<number[]>([]);
-
     const [selectedPosition, setSelectedPosition] = useState<[number, number]>([0, 0]);
-
     const [handleSubmited, setHandleSubmited] = useState<boolean>();
+    const [selectFile, setSelectFile] = useState<File>();
 
     const history = useHistory();
+
+
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(position => {
             const { latitude, longitude } = position.coords
@@ -107,36 +113,41 @@ const CreatePoint = () => {
         }
     }
 
-    async function handleSubmit(event: FormEvent){
+    async function handleSubmit(event: FormEvent) {
         event.preventDefault();
 
-        const {name, email, whatsapp} = formData;
+        const { name, email, whatsapp } = formData;
         const uf = selectedUf;
         const city = selectedCity;
         const [latitude, longitude] = selectedPosition;
         const items = selectedItems;
-        const data = {
-            name,
-            email,
-            whatsapp,
-            uf,
-            city,
-            latitude,
-            longitude,
-            items
-            
+
+        const data = new FormData();
+        data.append('name', name);
+        data.append('email', email);
+        data.append('whatsapp', whatsapp);
+        data.append('uf', uf);
+        data.append('city', city);
+        data.append('latitude', String(latitude));
+        data.append('longitude', String(longitude));
+        data.append('items', items.join(', '));
+        if (selectFile){
+            data.append('image', selectFile)
         }
+
+
+
         api.post('points', data);
         setHandleSubmited(true);
-        
+
         setTimeout(function () {
             history.push('/');
         }, 2000);
     }
     return (
-        
+
         <div id="page-create-point">
-             {handleSubmited ? <ModalSucess /> : null}
+            {handleSubmited ? <ModalSucess /> : null}
             <header>
                 <img src={logo} alt="Ecoleta" />
 
@@ -147,6 +158,9 @@ const CreatePoint = () => {
             </header>
             <form onSubmit={handleSubmit}>
                 <h1>Cadastro do<br />ponto de coleta.</h1>
+
+                <DropZone onFileUpload={setSelectFile} />
+
                 <fieldset>
                     <legend>
                         <h2>Dados</h2>
